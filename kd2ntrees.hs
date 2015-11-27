@@ -49,19 +49,19 @@ instance (Show t) => Show (Kd2nTree t) where
                   "\n " ++ indent ++ "<" ++ childIndex ++ ">" ++ showNode elem distr ++ 
                   showChilds ("    " ++ indent) childs
 
-insert :: Point p => Kd2nTree p -> p -> [Int] -> Kd2nTree p
+insert :: (Point p, Eq p) => Kd2nTree p -> p -> [Int] -> Kd2nTree p
 insert Empty point distr = Node point distr []
-insert (Node point distr childs) point' pdistr = Node point distr insert' 
+insert t@(Node point distr childs) point' pdistr | point == point' = t | otherwise = Node point distr insert' 
     where childIndex = child point' point distr
           ldiff      = childIndex - (length childs)
           insert' | ldiff >= 0 = childs ++ (take ldiff (repeat Empty)) ++ [Node point' pdistr []]
                   | otherwise  = left ++ insert elem point' pdistr : right
                   where (left, elem:right) = (take childIndex childs, drop childIndex childs) 
 
-build :: Point p => [(p,[Int])] -> Kd2nTree p
+build :: (Point p, Eq p) => [(p,[Int])] -> Kd2nTree p
 build l = foldl (\t (p,d) -> insert t p d) Empty l
 
-buildIni :: Point p => [([Double],[Int])] -> Kd2nTree p
+buildIni :: (Point p, Eq p) => [([Double],[Int])] -> Kd2nTree p
 buildIni l = build [ (list2Point p, d) | (p,d) <- l ]
 
 get_all ::  Kd2nTree p -> [(p,[Int])]
@@ -71,7 +71,7 @@ get_all (Node elem distr childs) = (elem, distr) : (concatMap get_all childs)
 elems :: Kd2nTree p -> [p]
 elems t = [ p | (p,_) <- get_all t ]
 
-remove :: (Eq p, Point p) => Kd2nTree p -> p -> Kd2nTree p
+remove :: (Point p, Eq p) => Kd2nTree p -> p -> Kd2nTree p
 remove Empty _ = Empty
 remove t@(Node point distr childs) point'
     | point == point'               = build $ tail $ get_all t
@@ -80,7 +80,7 @@ remove t@(Node point distr childs) point'
     where childIndex = child point' point distr
           (left, elem:right) = (take childIndex childs, drop childIndex childs)
 
-contains :: (Eq p, Point p) => Kd2nTree p -> p -> Bool
+contains :: (Point p, Eq p) => Kd2nTree p -> p -> Bool
 contains Empty _ = False
 contains (Node point _ _) point' | point == point' = True
 contains (Node point distr childs) point'
